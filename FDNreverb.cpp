@@ -89,3 +89,30 @@ double FDNreverb::step(double audioIn)
 	// Return output
 	return audioOut;
 }
+
+void FDNreverb::procBlock(float* samples, unsigned numSamples, double pctReverb, double dbGain)
+{
+	double gain = pow(10.0, dbGain / 20.0);
+	for (unsigned n = 0; n < numSamples; n++)
+	{
+		// Calculate output
+		double audioOut = 0.0;
+		for (unsigned k = 0; k < ORDER; k++)
+			audioOut += x[k];
+		audioOut /= double(ORDER);
+
+		// Update state variables
+		for (unsigned k = 0; k < ORDER; k++)
+		{
+			m_delayLine[k][m_oldest] = samples[n] + m_reflection * audioOut - x[k];
+			unsigned old = (m_oldest + m_sampleDelay[k]) % MAX_SAMPLE_DELAY;
+			x[k] = m_damping[k] * x[k] + (1.0 - m_damping[k]) * m_delayLine[k][old];
+		}
+
+		// Update index of oldest sample in delay line
+		m_oldest = m_oldest == 0 ? MAX_SAMPLE_DELAY - 1 : m_oldest - 1;
+
+		// Replace input sample with weighted sum of dry and wet signal
+		samples[n] = float((1.0 - pctReverb / 100.0) * samples[n] + (pctReverb / 100.0) * audioOut) * float(gain);
+	}
+}
