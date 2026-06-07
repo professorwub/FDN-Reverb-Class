@@ -60,6 +60,15 @@ public:
 	/// <returns>output sample</returns>
 	double step(double sample);
 
+	/// <summary>
+	/// Process a block of audio samples through the FDN reverb.
+	/// </summary>
+	/// <param name="samples">pointer to the array of input/output samples</param>
+	/// <param name="numSamples">number of samples in the array</param>
+	/// <param name="pctReverb">percent reverb (0-100)</param>
+	/// <param name="dbGain">gain in dB</param>
+	void procBlock(float* samples, unsigned numSamples, double pctReverb = 100.0, double dbGain = 0.0);
+
 private:
 	float m_delayLine[ORDER][MAX_SAMPLE_DELAY];
 	unsigned m_sampleDelay[ORDER];
