@@ -1,9 +1,9 @@
 /*
   ==============================================================================
 
-    FDNreverb.h
-    Created: 24 Nov 2019 12:35:34pm
-    Author:  profw
+	FDNreverb.h
+	Created: 24 Nov 2019 12:35:34pm
+	Author:  profw
 
   ==============================================================================
 */
@@ -26,12 +26,20 @@ public:
 
 	/// <summary>
 	/// Set the room area parameter.
+	/// The room area is used to determine the maximum path length for the delay lines,
+	/// and thus the sample delay and damping for each delay line.
+	/// The path lengths are determined based on the golden rectangle,
+	/// with each subsequent path length being a factor of alpha shorter than the previous one.
+	/// The alpha parameter is calculated based on the number of delay lines (ORDER)
+	/// to ensure a good distribution of path lengths.
 	/// </summary>
 	/// <param name="roomarea">room area in m^2</param>
 	void setroomarea(double roomarea);
 
 	/// <summary>
 	/// Set absorption coefficient
+	/// The absorption coefficient is used to determine the damping for each delay line,
+	/// with higher absorption coefficients resulting in more damping.
 	/// </summary>
 	/// <param name="abscoef">HF absorption coefficient in dB/m</param>
 	void setabscoef(double abscoef);
@@ -55,6 +63,7 @@ public:
 
 	/// <summary>
 	/// Step FDN reverb through one sample period
+	/// This method processes a single input sample through the FDN reverb and returns the output sample.
 	/// </summary>
 	/// <param name="sample">input sample</param>
 	/// <returns>output sample</returns>
@@ -62,6 +71,9 @@ public:
 
 	/// <summary>
 	/// Process a block of audio samples through the FDN reverb.
+	/// This method processes an array of input samples through the FDN reverb.
+	/// Each output sample is a weighted mix of the input sample and the reverb output,
+	/// with the mix determined by the pctReverb parameter. The dbGain parameter allows for adjusting the overall gain of the output signal.
 	/// </summary>
 	/// <param name="samples">pointer to the array of input/output samples</param>
 	/// <param name="numSamples">number of samples in the array</param>
