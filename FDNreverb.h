@@ -10,6 +10,8 @@
 
 #pragma once
 
+#include <vector>
+
 constexpr auto SPEEDOFSOUND = 343.0; // speed of sound in m/s
 constexpr auto ORDER = 6;
 constexpr double PHI = 1.618; // golden ratio
@@ -82,7 +84,7 @@ public:
 	void procBlock(float* samples, unsigned numSamples, double pctReverb = 100.0, double dbGain = 0.0);
 
 private:
-	float m_delayLine[ORDER][MAX_SAMPLE_DELAY];
+	std::vector<float> m_delayLine[ORDER];
 	unsigned m_sampleDelay[ORDER];
 	double m_damping[ORDER];
 	double x[ORDER];
