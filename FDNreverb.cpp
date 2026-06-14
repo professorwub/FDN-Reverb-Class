@@ -23,7 +23,7 @@ FDNreverb::FDNreverb()
 		x[k] = 0.0;
 		m_sampleDelay[k] = 0;
 		m_damping[k] = 0.0;
-		m_delayLine[k].resize(MAX_SAMPLE_DELAY);
+		m_delayLine[k].resize(MAX_SAMPLE_DELAY, 0.0f);
 	}
 }
 
