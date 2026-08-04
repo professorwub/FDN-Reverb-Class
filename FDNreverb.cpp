@@ -17,13 +17,12 @@ FDNreverb::FDNreverb()
 	m_samplingRate = 44100.0;
 	m_absCoef = 0.3;
 	m_reflection = 1.0;
-	m_oldest = MAX_SAMPLE_DELAY - 1;
+	m_current = 0;
 	for (int k = 0; k < ORDER; k++)
 	{
 		x[k] = 0.0;
 		m_sampleDelay[k] = 0;
 		m_damping[k] = 0.0;
-		m_delayLine[k].resize(MAX_SAMPLE_DELAY, 0.0f);
 	}
 }
 
@@ -57,33 +56,36 @@ void FDNreverb::setabscoef(double abscoef)
 
 void FDNreverb::reset()
 {
-	m_oldest = MAX_SAMPLE_DELAY - 1;
+	m_current = m_delayLine[0].size() - 1;
 	for (int k = 0; k < ORDER; k++)
 	{
 		x[k] = 0.0;
-		for (int n = 0; n < MAX_SAMPLE_DELAY; n++)
-			m_delayLine[k][n] = 0.0;
+		for (auto& dline : m_delayLine[k])
+			dline = 0.0f;
 	}
 }
 
 double FDNreverb::step(double audioIn)
 {
+	// Update state variables
+	for (unsigned k = 0; k < ORDER; k++)
+	{
+		unsigned old = (m_current + m_sampleDelay[k]) % m_delayLine[k].size();
+		x[k] = m_damping[k] * x[k] + (1.0 - m_damping[k]) * m_delayLine[k][old];
+	}
+
 	// Calculate output
 	double audioOut = 0.0;
 	for (unsigned k = 0; k < ORDER; k++)
 		audioOut += x[k];
 	audioOut /= double(ORDER);
 
-	// Update state variables
+	// Update delay lines with new input sample
 	for (unsigned k = 0; k < ORDER; k++)
-	{
-		m_delayLine[k][m_oldest] = audioIn + m_reflection * audioOut - x[k];
-		unsigned old = (m_oldest + m_sampleDelay[k]) % MAX_SAMPLE_DELAY;
-		x[k] = m_damping[k] * x[k] + (1.0 - m_damping[k]) * m_delayLine[k][old];
-	}
+		m_delayLine[k][m_current] = audioIn + m_reflection * audioOut - x[k];
 
 	// Update index of oldest sample in delay line
-	m_oldest = m_oldest == 0 ? MAX_SAMPLE_DELAY - 1 : m_oldest - 1;
+	m_current = m_current == 0 ? m_delayLine[0].size() - 1 : m_current - 1;
 
 	// Return output
 	return audioOut;
@@ -93,25 +95,19 @@ void FDNreverb::procBlock(float* samples, unsigned numSamples, double pctReverb,
 {
 	double gain = pow(10.0, dbGain / 20.0);
 	for (unsigned n = 0; n < numSamples; n++)
+		samples[n] = float((1.0 - pctReverb / 100.0) * samples[n] + (pctReverb / 100.0) * step(samples[n])) * float(gain);
+}
+
+void FDNreverb::setmaxsampledelay(double maxroomarea, double samplingrate)
+{
+	// This method calculates the maximum sample delay for the delay lines based on the maximum room area and sampling rate.
+	// It must be called before any audio processing occurs to ensure that the delay lines are properly sized.
+
+	double maxpathlength = sqrt(maxroomarea * PHI);
+	unsigned maxSampleDelay = lround(samplingrate * maxpathlength / SPEEDOFSOUND) + 1;
+	for (int k = 0; k < ORDER; k++)
 	{
-		// Calculate output
-		double audioOut = 0.0;
-		for (unsigned k = 0; k < ORDER; k++)
-			audioOut += x[k];
-		audioOut /= double(ORDER);
-
-		// Update state variables
-		for (unsigned k = 0; k < ORDER; k++)
-		{
-			m_delayLine[k][m_oldest] = samples[n] + m_reflection * audioOut - x[k];
-			unsigned old = (m_oldest + m_sampleDelay[k]) % MAX_SAMPLE_DELAY;
-			x[k] = m_damping[k] * x[k] + (1.0 - m_damping[k]) * m_delayLine[k][old];
-		}
-
-		// Update index of oldest sample in delay line
-		m_oldest = m_oldest == 0 ? MAX_SAMPLE_DELAY - 1 : m_oldest - 1;
-
-		// Replace input sample with weighted sum of dry and wet signal
-		samples[n] = float((1.0 - pctReverb / 100.0) * samples[n] + (pctReverb / 100.0) * audioOut) * float(gain);
+		m_delayLine[k].clear();
+		m_delayLine[k].resize(maxSampleDelay, 0.0f);
 	}
 }
