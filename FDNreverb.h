@@ -83,6 +83,14 @@ public:
 	/// <param name="dbGain">gain in dB</param>
 	void procBlock(float* samples, unsigned numSamples, double pctReverb = 100.0, double dbGain = 0.0);
 
+	/// <summary>
+	/// Set the maximum sample delay based on room area and sampling rate.
+	/// </summary>
+	/// <param name="maxroomarea">maximum room area in m^2</param>
+	/// <param name="samplingrate">sampling rate in Hz</param>
+	void setmaxsampledelay(double maxroomarea, double samplingrate);
+	
+
 private:
 	std::vector<float> m_delayLine[ORDER];
 	unsigned m_sampleDelay[ORDER];
@@ -92,5 +100,5 @@ private:
 	double m_samplingRate;
 	double m_absCoef; // HF absorption coefficient in dB/m
 	double m_reflection; // reflection parameter (no units)
-	unsigned m_oldest; // index of oldest sample in delay line (for circular buffer)
+	unsigned m_current; // index of oldest sample in delay line (for circular buffer)
 };
